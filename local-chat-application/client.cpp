@@ -3,6 +3,7 @@
 
 
 int main() {
+	std::cout << "Client Application" << std::endl;
 	WSAData WSAData;
 	WORD wVersionRequested = MAKEWORD(2, 2);
 	int startUpResult = WSAStartup(wVersionRequested, &WSAData);
@@ -36,10 +37,18 @@ int main() {
 	else {
 		std::cout << "connected" << std::endl;
 	}
+	char buffer[200];
+	std::cout << "enter message for server" << std::endl;
+	std::cin.getline(buffer, 200);
+	if (send(clientSocket, buffer, 200, 0) == 0) {
+		std::cout << "nothing sent :(" << std::endl;
+	}
+	else {
+		std::cout << "sent message :)" << std::endl;
+	}
 
 
-
-
+	std::cout << "closing socket, exiting programm" << std::endl;
 	closesocket(clientSocket);
 	WSACleanup();
 	return 0;

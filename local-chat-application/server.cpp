@@ -2,6 +2,7 @@
 #include <WinSock2.h>
 
 int main() {
+	std::cout << "Server Application" << std::endl;
 	WSAData WSAData;
 	WORD wVersionRequested = MAKEWORD(2, 2);
 	int startUpResult = WSAStartup(wVersionRequested, &WSAData);
@@ -49,11 +50,17 @@ int main() {
 		WSACleanup();
 		return -1;
 	}
+	char buffer[200];
+	if (recv(acceptSocket, buffer, 200, 0) == 0) {
+		std::cout << "we didnt receive shit" << std::endl;
+	}
+	else {
+		std::cout << "YOU GOT MAIL! : " << buffer << std::endl;
+	}
 
 
 
-
-
+	std::cout << "closing socket, exiting programm" << std::endl;
 	closesocket(serverSocket);
 	WSACleanup();
 	return 0;
