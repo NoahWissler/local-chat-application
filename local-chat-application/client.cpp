@@ -1,6 +1,26 @@
 #include <iostream>
+#include <thread>
 #include <WinSock2.h>
 
+void sendThread(SOCKET clientSocket) {
+	char buffer[200];
+	while (true) {
+		std::cin.getline(buffer, 200);
+		std::cout << "\033[1A";  // Move cursor up one line
+		std::cout << "\033[2K";  // Clear the line
+		std::cout << "you : " << buffer << std::endl;
+		send(clientSocket, buffer, 200, 0);
+	}
+}
+
+void receiveThread(SOCKET clientSocket) {
+	char buffer[200];
+	while (true) {
+		if (recv(clientSocket, buffer, 200, 0) != 0) {
+			std::cout << "server : " << buffer << std::endl;
+		}
+	}
+}
 
 int main() {
 	std::cout << "Client Application" << std::endl;
@@ -37,16 +57,12 @@ int main() {
 	else {
 		std::cout << "connected" << std::endl;
 	}
-	char buffer[200];
-	std::cout << "enter message for server" << std::endl;
-	std::cin.getline(buffer, 200);
-	if (send(clientSocket, buffer, 200, 0) == 0) {
-		std::cout << "nothing sent :(" << std::endl;
-	}
-	else {
-		std::cout << "sent message :)" << std::endl;
-	}
 
+	std::thread receive(receiveThread,clientSocket);
+	std::thread send(sendThread,clientSocket);
+
+	receive.join();
+	send.join();
 
 	std::cout << "closing socket, exiting programm" << std::endl;
 	closesocket(clientSocket);

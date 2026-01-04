@@ -1,5 +1,26 @@
 #include <iostream>
+#include <thread>
 #include <WinSock2.h>
+
+void sendThread(SOCKET sock) {
+	char buffer[200];
+	while (true) {
+		std::cin.getline(buffer, 200);
+		std::cout << "\033[1A";  // Move cursor up one line
+		std::cout << "\033[2K";  // Clear the line
+		std::cout << "you : " << buffer << std::endl;
+		send(sock, buffer, 200, 0);
+	}
+}
+
+void receiveThread(SOCKET sock) {
+	char buffer[200];
+	while (true) {
+		if (recv(sock, buffer, 200, 0) != 0) {
+			std::cout << "client : " << buffer << std::endl;
+		}
+	}
+}
 
 int main() {
 	std::cout << "Server Application" << std::endl;
@@ -37,7 +58,7 @@ int main() {
 		std::cout << "Socket bound!" << std::endl;
 	}
 
-	if (listen(serverSocket, 1) == SOCKET_ERROR) {
+	if (listen(serverSocket, 30) == SOCKET_ERROR) {
 		std::cout << "Could not listen. Error Code : " << WSAGetLastError() << std::endl;
 	}
 	else {
@@ -50,13 +71,12 @@ int main() {
 		WSACleanup();
 		return -1;
 	}
-	char buffer[200];
-	if (recv(acceptSocket, buffer, 200, 0) == 0) {
-		std::cout << "we didnt receive shit" << std::endl;
-	}
-	else {
-		std::cout << "YOU GOT MAIL! : " << buffer << std::endl;
-	}
+
+	std::thread receive(receiveThread, acceptSocket);
+	std::thread send(sendThread, acceptSocket);
+
+	receive.join();
+	send.join();
 
 
 
