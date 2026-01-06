@@ -1,23 +1,33 @@
 #include <iostream>
+#include <string>
 #include <thread>
+#include <vector>
+#include <mutex>
 #include <WinSock2.h>
 
-void sendThread(SOCKET sock) {
-	char buffer[200];
-	while (true) {
-		std::cin.getline(buffer, 200);
-		std::cout << "\033[1A";  // Move cursor up one line
-		std::cout << "\033[2K";  // Clear the line
-		std::cout << "you : " << buffer << std::endl;
-		send(sock, buffer, 200, 0);
-	}
+std::mutex acceptMutex;
+
+void sendfunc(SOCKET sock, char buffer[200], int clientNr) {
+	std::string prefix = "client " + std::to_string(clientNr) + ": ";
+	std::string message = prefix + buffer;
+		send(sock, message.c_str(), 200, 0);
 }
 
-void receiveThread(SOCKET sock) {
+void receiveThread(SOCKET acceptSocket, std::vector <SOCKET> &acceptSockets) {
 	char buffer[200];
 	while (true) {
-		if (recv(sock, buffer, 200, 0) != 0) {
+		if (recv(acceptSocket, buffer, 200, 0) != 0) {
 			std::cout << "client : " << buffer << std::endl;
+			std::vector<SOCKET> copy;
+			{
+				std::lock_guard<std::mutex> g(acceptMutex);
+				copy = acceptSockets;
+			}
+			for (int i{}; i < copy.size(); ++i) {
+				if (copy[i] != acceptSocket) {
+					sendfunc(copy[i], buffer, i+1);
+				}
+			}
 		}
 	}
 }
@@ -48,7 +58,7 @@ int main() {
 	service.sin_family = AF_INET;
 	service.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 	service.sin_port = htons(55555);
-	if (bind(serverSocket,(SOCKADDR*)&service, sizeof(service)) == SOCKET_ERROR) {
+	if (bind(serverSocket, (SOCKADDR*)&service, sizeof(service)) == SOCKET_ERROR) {
 		std::cout << "Socket could not bind. Error Code : " << WSAGetLastError() << std::endl;
 		closesocket(serverSocket);
 		WSACleanup();
@@ -64,6 +74,9 @@ int main() {
 	else {
 		std::cout << "Socket now listening for requests" << std::endl;
 	}
+	std::vector<std::thread> recvThreads;
+	std::vector<SOCKET> acceptSockets;
+	for (int i{}; i < 30; ++i) {
 	SOCKET acceptSocket = INVALID_SOCKET;
 	acceptSocket = accept(serverSocket, NULL, NULL);
 	if (acceptSocket == INVALID_SOCKET) {
@@ -71,12 +84,13 @@ int main() {
 		WSACleanup();
 		return -1;
 	}
-
-	std::thread receive(receiveThread, acceptSocket);
-	std::thread send(sendThread, acceptSocket);
-
-	receive.join();
-	send.join();
+	else {
+		std::cout << "accepted connection" << std::endl;
+		acceptSockets.emplace_back(acceptSocket);
+        recvThreads.emplace_back(std::thread(receiveThread, acceptSocket, std::ref(acceptSockets)));
+		
+	}
+}
 
 
 

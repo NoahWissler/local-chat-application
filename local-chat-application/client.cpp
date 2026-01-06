@@ -17,7 +17,7 @@ void receiveThread(SOCKET clientSocket) {
 	char buffer[200];
 	while (true) {
 		if (recv(clientSocket, buffer, 200, 0) != 0) {
-			std::cout << "server : " << buffer << std::endl;
+			std::cout << buffer << std::endl;
 		}
 	}
 }
