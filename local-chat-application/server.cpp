@@ -17,17 +17,23 @@ void receiveThread(SOCKET acceptSocket, std::vector <SOCKET> &acceptSockets) {
 	char buffer[200];
 	while (true) {
 		if (recv(acceptSocket, buffer, 200, 0) != 0) {
-			std::cout << "client : " << buffer << std::endl;
 			std::vector<SOCKET> copy;
 			{
 				std::lock_guard<std::mutex> g(acceptMutex);
 				copy = acceptSockets;
 			}
-			for (int i{}; i < copy.size(); ++i) {
+			bool socketFound = false;
+			int i{};
+			while(!socketFound) {
 				if (copy[i] != acceptSocket) {
-					sendfunc(copy[i], buffer, i+1);
+					sendfunc(copy[i], buffer, i + 1);
+					socketFound = true;
+				}
+				else {
+					++i;
 				}
 			}
+			std::cout << "client " << i+1 << ": " << buffer << std::endl;
 		}
 	}
 }
