@@ -23,20 +23,26 @@ void receiveThread(SOCKET acceptSocket, std::vector <SOCKET> &acceptSockets) {
 				copy = acceptSockets;
 			}
 			bool socketFound = false;
-			int i{};
-			while(!socketFound) {
-				if (copy[i] != acceptSocket) {
-					sendfunc(copy[i], buffer, i + 1);
-					socketFound = true;
+			int index{};
+			while (!socketFound) {
+				if (copy[index] != acceptSocket) {
+					++index;
 				}
 				else {
-					++i;
+					socketFound = true;
 				}
 			}
-			std::cout << "client " << i+1 << ": " << buffer << std::endl;
+			int clientNr = index + 1;
+			std::cout << "client " << clientNr << ": " << buffer << std::endl;
+			for (int i{}; i < copy.size(); ++i) {
+				if (copy[i] != acceptSocket) {
+					sendfunc(copy[i], buffer, clientNr);
+				}
+			}
+			}
 		}
 	}
-}
+
 
 int main() {
 	std::cout << "Server Application" << std::endl;
