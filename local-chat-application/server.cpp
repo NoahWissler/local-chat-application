@@ -136,7 +136,7 @@ int main() {
             recvThreads.emplace_back(std::thread(receiveThread, acceptSocket, std::ref(acceptSockets), std::ref(acceptSocketsNames)));
         }
     }
-
+    //i need this
     // Threads joinen, damit shared container nicht zerstört werden, während Threads laufen
     for (auto &t : recvThreads) {
         if (t.joinable()) t.join();
